@@ -58,6 +58,16 @@ nav li {
   display: none;
 }
 
+nav ul {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+nav li {
+  margin: 0 20px;
+}
+
 @media screen and (max-width: 768px) {
   nav ul {
     display: none;
@@ -66,12 +76,15 @@ nav li {
     left: 0;
     width: 100%;
     background-color: #333;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   nav li {
     display: block;
     text-align: center;
-    margin: 0;
+    margin: 10px 0;
     width: 100%;
   }
 
@@ -82,5 +95,32 @@ nav li {
     text-align: right;
     padding: 0 20px;
     cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+
+  .menu-toggle .bar {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background-color: #fff;
+    margin: 6px 0;
+    transition: transform 0.2s ease;
+  }
+
+  .menu-toggle:checked + label .bar:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+
+  .menu-toggle:checked + label .bar:nth-child(2) {
+    opacity: 0;
+  }
+
+  .menu-toggle:checked + label .bar:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+  }
+
+  .menu-toggle:checked ~ nav ul {
+    display: block;
   }
 }
