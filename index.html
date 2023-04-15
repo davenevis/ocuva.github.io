@@ -6,7 +6,7 @@
 	<link rel="stylesheet" type="text/css" href="style.css">
 	 <nav>
     <div class="menu-toggle">&#9776;</div>
-    <ul>
+    <ul id="nav-links">
       <li><a href="#">Home</a></li>
       <li><a href="#">About</a></li>
       <li><a href="#">Services</a></li>
@@ -77,5 +77,15 @@
 		<p>Copyright © 2023 davenevis</p>
 		<p>デイブ</p>
 	</footer>
+  <script type="text/javascript">
+	 <script>
+		function toggleMenu() {
+			var menuToggle = document.querySelector('.menu-toggle');
+			var menu = document.querySelector('.menu');
+
+			menuToggle.classList.toggle('active');
+			menu.classList.toggle('active');
+		}
+	</script> 
 </body>
 </html>
