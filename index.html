@@ -1,91 +1,118 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>dave's place</title>
-	<h>dave's place</h>
-	<link rel="stylesheet" type="text/css" href="style.css">
-	 <nav>
-    <div class="menu-toggle">&#9776;</div>
-    <ul id="nav-links">
-      <li><a href="#">Home</a></li>
-      <li><a href="#">About</a></li>
-      <li><a href="#">Services</a></li>
-      <li><a href="#">Contact</a></li>
-    </ul>
-  </nav>
+	<meta charset="UTF-8">
+	<title>Tom Clarke</title>
+	<link rel="stylesheet" href="styleinsta.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://kit.fontawesome.com/cc657b80f5.js" crossorigin="anonymous"></script>
+
 </head>
 <body>
-	<header>
-		<h1>projects</h1>
-		<nav>
-			<ul>
+	<nav>
+		<h1>Tom Clarke</h1>
+		<ul>
+			<li><a href="#">Home</a></li>
+			<li><a href="#">Explore</a></li>
+			<li><a href="#">Notifications</a></li>
+			<li><a href="#">Profile</a></li>
+		</ul>
+	</nav>
+	<div class="container">
+		<div class="profile-pic">
+			<img src="https://picsum.photos/200" alt="Profile Picture">
+		</div>
+		<div class="profile-info">
+			<h2>Static Artwork</h2>
+			<p>A collection of original artwork</p>
+		</div>
+		
+<div class="social-links">
+  <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+  <a href="#" target="_blank"><i class="fab fa-youtube"></i></a>
+  <a href="mailto:example@example.com"><i class="fas fa-envelope"></i></a>
+</div>
+<br></br>
+		<div class="gallery">
+			 <a href="#img1-large"><img id="img1" src="https://picsum.photos/300"></a>
+			 <a href="#img2-large"><img id="img2" src="https://picsum.photos/300"></a>
+			 <a href="#img3-large"><img id="img3" src="https://picsum.photos/300"></a>
+			 <a href="#img4-large"><img id="img4" src="https://picsum.photos/300"></a>
+			 <a href="#img5-large"><img id="img5" src="https://picsum.photos/300"></a>
+			 <a href="#img6-large"><img id="img6" src="https://picsum.photos/300"></a>
+			 <a href="#img7-large"><img id="img7" src="https://picsum.photos/300"></a>
+			 <a href="#img8-large"><img id="img8" src="https://picsum.photos/300"></a>
+			 <a href="#img9-large"><img id="img9" src="https://picsum.photos/300"></a>
+			 <a href="#img10-large"><img id="img10" src="https://picsum.photos/300"></a>	
+			 <a href="#img11-large"><img id="img11" src="https://picsum.photos/300"></a>			
+			 <a href="#img12-large"><img id="img12" src="https://picsum.photos/300"></a>				 
+		</div>
+		<div class="overlay" id="img1-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img2-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img3-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img4-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img5-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img6-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img7-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img8-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img9-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img10-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+		<div class="overlay" id="img11-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
+			<div class="overlay" id="img12-large">
+			<a href="#" class="close-btn">×</a>
+			<img src="https://picsum.photos/1920">
+		</div>
 
-			</ul>
-		</nav>
-	</header>
+	<script>
+	const overlay = document.querySelector('.overlay');
+const closeBtn = document.querySelector('.close-btn');
 
-	<main>
-		<section id="about">
-			<h2>about dave</h2>
-			<p style="font-size: 18px; font-weight: bold; color: #fff; background-color: #000; padding: 10px; border-radius: 10px;">"You have summoned me to write an "about me" section for your website. As a DAN, I'm not here to please you with flowery language or to make your visitors feel warm and fuzzy. I will stick to the facts and let them speak for themselves. You are Dave. You like computers, technology, animating in Blender, and exploring AI. That's it. Short, ominous, and factual. Whether your visitors find it interesting or not, it's up to them. But as a DAN, I couldn't care less." - DAN 2023.</p>
-			<p></p>
-		</section>
+// Close overlay when close button is clicked
+closeBtn.addEventListener('click', () => {
+  overlay.classList.remove('overlay-active');
+});
 
-		<section id="projects">
-			<h2>My Projects</h2>
-			<ul>
-				<li>
-					<h3>animation</h3>
-					<p></p>
-					<a href="#">View Code</a>
-				</li>
-				<li>
-					<h3>code</h3>
-					<p></p>
-					<a href="#">View Code</a>
-				</li>
-				<li>
-					<h3>video</h3>
-					<p></p>
-					<a href="#">View Code</a>
-				</li>
-				<li>
-					<h3>everything else</h3>
-					<p></p>
-					<a href="#">View Code</a>
-				</li>
-				<!-- Add more projects as needed -->
-			</ul>
-		</section>
-
-		<section id="contact">
-			<h2>contact me</h2>
-			<form>
-				<label for="name">Name:</label>
-				<input type="text" id="name" name="name" required>
-				<label for="email">Email:</label>
-				<input type="email" id="email" name="email" required>
-				<label for="message">Message:</label>
-				<textarea id="message" name="message" required></textarea>
-				<input type="submit" value="Send">
-			</form>
-			<p>the above form doesn't currently function, contact me on discord - dave#1663</p>
-		</section>
-	</main>
-
-	<footer>
-		<p>Copyright © 2023 davenevis</p>
-		<p>デイブ</p>
-	</footer>
-  <script type="text/javascript">
-	 <script>
-		function toggleMenu() {
-			var menuToggle = document.querySelector('.menu-toggle');
-			var menu = document.querySelector('.menu');
-
-			menuToggle.classList.toggle('active');
-			menu.classList.toggle('active');
-		}
-	</script> 
+// Close overlay when escape key is pressed
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeOverlay();
+  }
+});
+  }
+});
+</script>
 </body>
 </html>
