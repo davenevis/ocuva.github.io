@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tom Clarke</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: url(https://media.giphy.com/media/26tOVxw5cTv22Z2rS/giphy.gif) no-repeat center center fixed;
+        background-size: cover;
+      }
+
+.backgroundcolor {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://giphy.com/gifs/4k-sehsucht-adventcalendar-26tOVxw5cTv22Z2rS");
+  background-size: cover;
+  height: 100vh;
+}
+      
+      .container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+
+      }
+      
+      h1 {
+        font-size: 4em;
+        margin: 0;
+      }
+      
+      .btn {
+        display: inline-block;
+        background-color: white;
+        color: black;
+        padding: 10px 20px;
+        margin-top: 20px;
+        text-decoration: none;
+        font-size: 1em;
+        border-radius: 5px;
+		font-family: 'Righteous', sans-serif;
+      }
+	  .overlay {
+  background: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.profile-pic {
+  width: 200px;
+  height: 200px;
+  border: 6px;
+  border-radius: 100%;
+  overflow: hidden;
+  margin: 0 auto 20px;
+  position: relative;
+  padding: 4px;
+}
+
+.profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Add a pseudo-element with a gradient border */
+.profile-pic::before {
+  content: "";
+  position: absolute;
+  border: 10px;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  z-index: -1;
+  border-radius: 50%;
+  background: linear-gradient(to right, #BB86FC, #3700B3, #03DAC6);
+  animation: rotate 10s linear infinite;
+}
+
+/* Define the animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes border {
+  from {
+    border: 2px solid transparent;
+  }
+  to {
+    border: 2px solid white;
+  }
+}
+
+/* Apply the animation on hover */
+.profile-pic:hover {
+  animation: border 0.5s forwards;
+}
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.social-links a {
+  color: #fff;
+  font-size: 50px;
+  margin-right: 10px;
+}
+    </style>
+	<script src="https://kit.fontawesome.com/cc657b80f5.js" crossorigin="anonymous"></script>
+  </head>
+
+  
+  <body>
+  
+    <div class="container">
+	<div class="profile-pic">
+			<img src="https://scontent-man2-1.xx.fbcdn.net/v/t39.30808-6/263463582_1851702585037905_749167587330196580_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=09cbfe&_nc_ohc=QzDGb0e0Ur8AX8J3pQo&_nc_ht=scontent-man2-1.xx&oh=00_AfCAZhYh1MlO8ov3F5ChKkF6UZ22mLlItK1K0Tyos1JCQw&oe=64436103" alt="Profile Picture">
+		</div>
+      <h1>Tom Clarke</h1>
+	  <div class="social-links">
+  <a href="https://www.instagram.com/tc4262001/" target="_blank"><i class="fab fa-instagram"></i></a>
+  <a href="https://www.youtube.com/channel/UCMayYLd3B1A_hIo0seD3ENQ" target="_blank"><i class="fab fa-youtube"></i></a>
+  <a href="mailto:tom@lo-tide-collective.com"><i class="fas fa-envelope"></i></a>
+</div>
+      <a class="btn" href="#">Images</a>
+      <a class="btn" href="#">Videos</a>
+	  <br></br>
+	  <p>this site is experimental and is not yet complete</p>
+	
+	  <p>contact: tom@lo-tide-collective.com</p>
+	   <br></br>
+	    <br></br>
+		 <br></br>
+		 <p></p>
+	 
+    </div>
+	<div class="backgroundcolor">
+</div>
+  </body>
+</html>
