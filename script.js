@@ -1,6 +1,6 @@
 const terminalOutput = document.getElementById('terminal-output');
 const terminalCursor = document.getElementById('terminal-cursor');
-const commandTexts = ['decrypting davenevis.txt', 'success', 'loading portfolio...', 'success'];
+const commandTexts = ['run decryption davenevis.txt', '...processing...', 'decryption successful', 'opening davenevis.txt',];
 
 const cursorBlinkDelay = 500; // Adjust the blinking delay as desired
 
