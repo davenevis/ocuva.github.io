@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Water Particle Accumulation – Improved Filling</title>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding-top: 20px;
+      font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: fit-content;
+    }
+    canvas {
+      image-rendering: pixelated;
+      border: 2px solid #fff;
+      border-bottom: none;
+      background: #000;
+    }
+    .taskbar {
+      width: 100%;
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      padding: 4px;
+      display: flex;
+      gap: 4px;
+      box-sizing: border-box;
+    }
+    .taskbar button {
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      padding: 4px 12px;
+      font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+      font-size: 12px;
+      color: #000;
+      cursor: pointer;
+      image-rendering: pixelated;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 80px;
+      justify-content: center;
+    }
+    .taskbar button:disabled {
+      color: #808080;
+      text-shadow: 1px 1px #fff;
+    }
+    .taskbar button:active:not(:disabled) {
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      padding: 5px 11px 3px 13px;
+    }
+    .taskbar button img {
+      width: 16px;
+      height: 16px;
+      image-rendering: pixelated;
+    }
+    .status-bar {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      color: white;
+      font-family: monospace;
+    }
+    
+    /* Decoration Menu Styles */
+    .decoration-menu {
+      width: 100%;
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      box-sizing: border-box;
+    }
+    
+    .menu-tabs {
+      display: flex;
+      border-bottom: 1px solid #808080;
+    }
+    
+    .menu-tab {
+      padding: 4px 12px;
+      font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      border-right: 1px solid #808080;
+      background: #c0c0c0;
+    }
+    
+    .menu-tab.active {
+      background: #d4d0c8;
+      border-bottom: 1px solid #d4d0c8;
+      position: relative;
+      bottom: -1px;
+      font-weight: bold;
+    }
+    
+    .menu-content {
+      padding: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 80px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    
+    .menu-content > div {
+      display: none;
+    }
+    
+    .menu-content > div.active {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .decoration-item {
+      width: 40px;
+      height: 40px;
+      border-top: 1px solid #fff;
+      border-left: 1px solid #fff;
+      border-right: 1px solid #808080;
+      border-bottom: 1px solid #808080;
+      background: #d4d0c8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      image-rendering: pixelated;
+    }
+    
+    .decoration-item img {
+      max-width: 36px;
+      max-height: 36px;
+      image-rendering: pixelated;
+    }
+    
+    .tank-decoration {
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+  <canvas id="canvas"></canvas>
+    <div class="taskbar">
+      <button id="startBtn">▶ Start Flow</button>
+      <button id="stopBtn" disabled>⏹ Stop Flow</button>
+      <button id="addFishBtn">🐠 Add Fish</button>
+      <button id="addFoodBtn">🍞 Drop Food</button>
+    </div>
+    <div class="decoration-menu">
+      <div class="menu-tabs">
+        <div class="menu-tab active" data-tab="rocks">Rocks</div>
+        <div class="menu-tab" data-tab="plants">Plants</div>
+        <div class="menu-tab" data-tab="ornaments">Ornaments</div>
+        <div class="menu-tab" data-tab="misc">Misc</div>
+      </div>
+      <div class="menu-content">
+        <div class="tab-content active" id="rocks-content">
+          <div class="decoration-item" data-type="rock" data-variant="1">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAlklEQVR42mNgGAWjYBSMgqEL/kPBQNvBCIv5D7QDmBgG2gEw8z8MrAOYGQfaAWDzYQ4YaEcwMgy0A8Dmwx0w0I5gYhhoB8DMJzQKBtoRLAwD7QCY+cRGwUA7gpVhoB0AM5+YUTDQjmBjGGgHwMwnZhQMtCPYGQbaATDzSRkFA+0IDoaBdgDMfGLTwUA7gnOgHQAAJdMoHvdBs1QAAAAASUVORK5CYII=">
+          </div>
+          <div class="decoration-item" data-type="rock" data-variant="2">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAsklEQVR42mNgGAWjYBSMAtKBPxax/0CYkYA8MWAmAnJDzf8PdwAO+UE2CkBsdgLyA+uAfzjkB5sD/uGQH/wOGAWjYBQQD/4js/+hsMNAO4KZEav5/+HmD7QDGBnRzP8PN3+gHcDEgGb+f7j5A+0AZgYM8//DzR9oBzAzYJgPN3+gHcDCgGE+3PyBdgALA4b5cPMH2gGsDGjmw80faAewMqCZDzd/oB3AxoBi/n88AQEAUH6HYYRlH7IAAAAASUVORK5CYII=">
+          </div>
+          <div class="decoration-item" data-type="rock" data-variant="3">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAn0lEQVR42mNgGAWjYBSMAtIBIeAKNZ8RizwDFnliAR8W8f9Q84l2AEw/CxZ5Qg5gwiL+nxgHsGARw+sAVizix6lx1FAeZaNgFIwCnOA/DP9HYofTIv0zYJGnRjpgwCJOaRpgxCL+n+pRwIRF/D/VowCW8MlOA4xYxP9TPQpYsIj/p3oUwBI+2WmAEYv4f6pHASsW8f9UjwJCgOZRAABPtrIhMiJFnQAAAABJRU5ErkJggg==">
+          </div>
+        </div>
+        <div class="tab-content" id="plants-content">
+          <div class="decoration-item" data-type="plant" data-variant="1">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAiklEQVR42mNgGAWjYBSMAtLAfyj4j0ecEU18gAATHnEGYhwAAygOYCTCAYxomkhxACOaJlIcwIimCZ8D/qOJM6CJDxBgwiPOgE0TLgcwYtHEiKZpgAATHnEGYlMRIwENTGiaSHEAI5omUhzAiKaJFAcwomki1QFMaOKkOoAJTZxUBzChiZPqAAY0cXIBACkpgCE3T4UgAAAAAElFTkSuQmCC">
+          </div>
+          <div class="decoration-item" data-type="plant" data-variant="2">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAiklEQVR42mNgGAWjYBSMAtLAfyj4j0ecEU18gAATHnEGYhwAAygOYCTCAYxomkhxACOaJlIcwIimCZ8D/qOJM6CJDxBgwiPOgE0TLgcwYtHEiKZpgAATHnEGYlMRIwENTGiaSHEAI5omUhzAiKaJFAcwomki1QFMaOKkOoAJTZxUBzChiZPqAAY0cXIBACkpgCE3T4UgAAAAAElFTkSuQmCC">
+          </div>
+          <div class="decoration-item" data-type="plant" data-variant="3">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAnklEQVR42mNgGAWjYBSMglFAGvgPBf/xiDOiiQ8QYMIjzkCMA0aBA0ZyFDASoYkRi/hA5wEmPOIMxKYiRjRNMAcwommCOYARTRPMAYxommAO+I8mzoAmPkCACY84AzZNuBzAiEUTI5qmAQJMeMQZqJmKGNE0kRIFjGiaSIkCRjRNpEQBI5omUqOACU2cVAcwoYmT6gAmNHFSHcCAJk4uAACBaZZXKO8VJQAAAABJRU5ErkJggg==">
+          </div>
+        </div>
+        <div class="tab-content" id="ornaments-content">
+          <div class="decoration-item" data-type="ornament" data-variant="1">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAlElEQVR42mNgGAWjYBSMglFACvgPBf+JFRvqgAGLOCMWcQYi5JmwiDNiEWfE44D/eMQZ0TQOdBSwYBFnxCLOiEUTIxoeyChgwCLOiEWcEYsmRjQ8kFHAhEWcEYs4IxZNjGh4IKOABYs4IxZxRiyaGNHwQEYBAxZxRizijFg0MaLhgYwCJizijFjEGbFoYkTDAxkFLFjEGYmQAwBMspQhWoZ5jQAAAABJRU5ErkJggg==">
+          </div>
+          <div class="decoration-item" data-type="ornament" data-variant="2">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAm0lEQVR42mNgGAWjYBSMglFACvgPBf+JFRvqgAGLOCMWcQYi5JmwiDNiEWfE44D/eMQZ0TQOdBSwYBFnxCLOiEUTIxoeyChgwCLOiEWcEYsmRjQ8kFHAhEWcEYs4IxZNjGh4IKOABYs4IxZxRiyaGNHwQEYBAxZxRizijFg0MaLhgYwCJizijFjEGbFoYkTDAxkFLFjEGYmQAwBMspQhWoZ5jQAAAABJRU5ErkJggg=="
+          </div>
+        </div>
+        <div class="tab-content" id="misc-content">
+          <div class="decoration-item" data-type="misc" data-variant="1">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAj0lEQVR42mNgGAWjYBSMglGAC/yHgv94xBnRxAcIMOERZyDGAaNgFFAdMJLgACYs4gzkOIAJizgjMQ5gQhNnQBMfIMCER5wBmyZcDmDEookRTdMAAUY84gzkpCJGNE2keAEjmiZSvMCIpokULzCiaSLFC4xomkj1AhOaOKleYEITJ9ULTGjipHqBAU0cFwAAVyR8IeEoiK8AAAAASUVORK5CYII=">
+          </div>
+          <div class="decoration-item" data-type="misc" data-variant="2">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkklEQVR42mNgGAWjYBSMglGAC/yHgv94xBnRxAcIMOERZyDGAaNgFFAdMJLgACYs4gzkOIAJizgjMQ5gQhNnQBMfIMCER5wBmyZcDmDEookRTdMAAUY84gzkpCJGNE2keIERTRMpXmBE00SKFxjRNJHiBUY0TaR6gQlNnFQvMKGJk+oFJjRxUr3AgCaOCwAAs9F8Ic+0DvEAAAAASUVORK5CYII=">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="status-bar" id="statusBar">Fish: 0 | Food: 0</div>
+  <script>
+    // --- Canvas & Simulation Setup ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const simWidth = 400;
+    const simHeight = 300;
+    canvas.width = simWidth;
+    canvas.height = simHeight;
+
+    // --- Container Boundaries ---
+    const containerLeft = 50;
+    const containerRight = simWidth - 50;
+    const containerTop = 50;
+    const containerBottom = simHeight - 20;
+    // Gap in the top wall for overflow:
+    const gapWidth = 20;
+    const gapLeft = (containerLeft + containerRight) / 2 - gapWidth / 2;
+    const gapRight = (containerLeft + containerRight) / 2 + gapWidth / 2;
+
+    // --- Water Particle Settings ---
+    const particleSize = 4;
+    let waterParticles = [];
+    const gravity = 0.6;
+    const friction = 0.98;
+    const restitution = 0.3;
+    const horizontalTolerance = particleSize * 1.5; 
+
+    // Grid system
+    const grid = new Map();
+    const gridSize = particleSize;
+
+    // Convert world coordinates to grid coordinates  
+    function worldToGrid(x, y) {
+        return {
+            x: Math.floor(x / gridSize),
+            y: Math.floor(y / gridSize)
+        };
+    }
+
+    // Check if a grid position is occupied
+    function isGridOccupied(gridX, gridY) {
+        return grid.has(`${gridX},${gridY}`);
+    }
+
+    // Mark a grid position as occupied
+    function occupyGrid(gridX, gridY, particle) {
+        grid.set(`${gridX},${gridY}`, particle);
+    }
+
+    // Clear a grid position
+    function clearGrid(gridX, gridY) {
+        grid.delete(`${gridX},${gridY}`);
+    }
+
+    // Check if a particle can flow to a new position
+    function canFlowTo(gridX, gridY) {
+        // Check if the position is within container bounds
+        const worldX = gridX * gridSize;
+        const worldY = gridY * gridSize;
+        if (worldX < containerLeft || worldX > containerRight - particleSize ||
+            worldY < containerTop || worldY > containerBottom - particleSize) {
+            return false;
+        }
+        return !isGridOccupied(gridX, gridY);
+    }
+
+    // Try to flow to a new position
+    function tryFlow(particle, gridX, gridY) {
+        if (canFlowTo(gridX, gridY)) {
+            const worldX = gridX * gridSize;
+            const worldY = gridY * gridSize;
+            particle.x = worldX;
+            particle.y = worldY;
+            return true;
+        }
+        return false;
+    }
+
+    // --- Water Source Settings ---
+    const sourceX = Math.floor((containerLeft + containerRight) / 2);
+    const sourceY = containerTop - 10;
+
+    // Create a new water particle with wider horizontal variation
+    function createWaterParticle() {
+        const particle = {
+            x: sourceX + (Math.random() - 0.5) * 15,
+            y: sourceY,
+            vx: 0,
+            vy: 0
+        };
+        const gridPos = worldToGrid(particle.x, particle.y);
+        occupyGrid(gridPos.x, gridPos.y, particle);
+        waterParticles.push(particle);
+    }
+
+    // Add flow control state
+    let isFlowing = false;
+
+    // Update button controls
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    startBtn.addEventListener('click', () => {
+      isFlowing = true;
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    });
+
+    stopBtn.addEventListener('click', () => {
+      isFlowing = false;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
+
+    // Modify the water particle rendering for more consistent appearance
+    function drawParticles() {
+      // First draw the solid background water layer
+      ctx.fillStyle = 'rgba(0, 130, 255, 0.4)';  // Lighter base blue with some transparency
+      
+      // Create a Set to track filled cells for the background
+      const filledCells = new Set();
+      
+      // First pass: collect all occupied cells and their neighbors
+      for (let p of waterParticles) {
+        const gridPos = worldToGrid(p.x, p.y);
+        // Add the cell and its neighbors to create a smoother background
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const key = `${gridPos.x + dx},${gridPos.y + dy}`;
+            filledCells.add(key);
+          }
+        }
+      }
+
+      // Draw the background water layer
+      for (let cellKey of filledCells) {
+        const [x, y] = cellKey.split(',').map(Number);
+        const worldX = x * gridSize;
+        const worldY = y * gridSize;
+        // Only draw if within container bounds
+        if (worldX >= containerLeft && worldX < containerRight &&
+            worldY >= containerTop && worldY < containerBottom) {
+          ctx.fillRect(worldX, worldY, particleSize, particleSize);
+        }
+      }
+
+      // Then draw the individual particles with less variation
+      ctx.fillStyle = 'rgba(0, 170, 255, 0.7)';  // Base particle color
+      for (let p of waterParticles) {
+        const neighbors = countNeighbors(p);
+        // Reduce the neighbor influence for more consistency
+        const alpha = 0.7 + (neighbors * 0.02);  // Reduced neighbor influence
+        ctx.fillStyle = `rgba(0, 170, 255, ${Math.min(alpha, 0.85)})`;
+        ctx.fillRect(p.x, p.y, particleSize, particleSize);
+      }
+    }
+
+    // Helper function to count neighboring particles
+    function countNeighbors(particle) {
+      const gridPos = worldToGrid(particle.x, particle.y);
+      let count = 0;
+      
+      // Check 8 surrounding grid cells
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          if (isGridOccupied(gridPos.x + dx, gridPos.y + dy)) {
+            count++;
+          }
+        }
+      }
+      return count;
+    }
+
+    // Modify injectWater to respect flow state
+    function injectWater() {
+      if (isFlowing) {
+        for (let i = 0; i < 1; i++) {
+            createWaterParticle();
+        }
+        }
+    }
+
+    // --- Update Particle Physics ---
+    function updateParticles() {
+        // Clear the grid at the start of each frame
+        grid.clear();
+        for (let p of waterParticles) {
+            // Apply gravity (vertical) and friction on horizontal velocity
+            p.vy += gravity;
+            p.vx *= friction;
+            
+            // Compute new positions (include horizontal velocity)
+            let newX = p.x + p.vx;
+            let newY = p.y + p.vy;
+
+            // Check collision with grid below (simulate support)
+            const belowGrid = worldToGrid(newX, newY + particleSize);
+            if (isGridOccupied(belowGrid.x, belowGrid.y)) {
+                newY = belowGrid.y * gridSize - particleSize;
+                p.vy = -p.vy * restitution;
+                
+                // Try to flow left or right when hitting something below
+                const currentGrid = worldToGrid(newX, newY);
+                if (Math.random() < 0.5) {
+                    if (tryFlow(p, currentGrid.x - 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    } else if (tryFlow(p, currentGrid.x + 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    }
+                } else {
+                    if (tryFlow(p, currentGrid.x + 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    } else if (tryFlow(p, currentGrid.x - 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    }
+                }
+            }
+
+            // Container boundary collisions
+            if (newX < containerLeft + particleSize) {
+                newX = containerLeft + particleSize;
+                p.vx = -p.vx * restitution;
+            }
+            if (newX > containerRight - particleSize) {
+                newX = containerRight - particleSize;
+                p.vx = -p.vx * restitution;
+            }
+            if (newY + particleSize > containerBottom) {
+                newY = containerBottom - particleSize;
+                p.vy = -p.vy * restitution;
+                
+                // Try to flow left or right when hitting the bottom
+                const currentGrid = worldToGrid(newX, newY);
+                if (Math.random() < 0.5) {
+                    if (tryFlow(p, currentGrid.x - 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    } else if (tryFlow(p, currentGrid.x + 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    }
+                } else {
+                    if (tryFlow(p, currentGrid.x + 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    } else if (tryFlow(p, currentGrid.x - 1, currentGrid.y)) {
+                        newX = p.x;
+                        newY = p.y;
+                        p.vy = 0;
+                    }
+                }
+            }
+
+            // Always update the particle's position so lateral moves are registered
+            p.x = newX;
+            p.y = newY;
+
+            // Update grid position for collision checks
+            const finalGrid = worldToGrid(p.x, p.y);
+            occupyGrid(finalGrid.x, finalGrid.y, p);
+        }
+    }
+
+    // --- Drawing Functions ---
+    function drawContainer() {
+      ctx.fillStyle = "#444";
+      // Left wall.
+      ctx.fillRect(containerLeft - particleSize, containerTop, particleSize, containerBottom - containerTop);
+      // Right wall.
+      ctx.fillRect(containerRight, containerTop, particleSize, containerBottom - containerTop);
+      // Bottom wall.
+      ctx.fillRect(containerLeft, containerBottom, containerRight - containerLeft, particleSize);
+      // Top wall with an overflow gap (draw two segments).
+      ctx.fillRect(containerLeft, containerTop - particleSize, (containerRight - containerLeft) / 2 - gapWidth / 2, particleSize);
+      ctx.fillRect((containerLeft + containerRight) / 2 + gapWidth / 2, containerTop - particleSize, (containerRight - containerLeft) / 2 - gapWidth / 2, particleSize);
+    }
+
+    // --- Fish Settings ---
+    class FoodParticle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vy = 0.5;
+        this.size = 3;
+        this.eaten = false;
+        this.lifespan = 600; // 10 seconds at 60fps
+      }
+
+      update() {
+        if (this.eaten) return;
+        this.y += this.vy;
+        this.lifespan--;
+        
+        // Stop at container bottom
+        if (this.y > containerBottom - this.size) {
+          this.y = containerBottom - this.size;
+        }
+      }
+
+      draw() {
+        if (this.eaten) return;
+        ctx.fillStyle = `rgba(255, 200, 0, ${this.lifespan / 600})`;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    // Fish behavior states
+    const FishBehavior = {
+      PATROL: 'patrol',         // Swim around tank in a pattern
+      EXCITED: 'excited',       // Quick, erratic movements
+      LURK: 'lurk',            // Stay near bottom, minimal movement
+      FOOD_SEEKING: 'seeking'   // Actively pursuing food
+    };
+
+    // Fish personality traits
+    const personalityTraits = {
+      CURIOUS: 'curious',      // More likely to investigate food
+      SHY: 'shy',             // Stays away from other fish
+      SOCIAL: 'social',       // Likes to swim near other fish
+      ENERGETIC: 'energetic', // Moves faster
+      LAZY: 'lazy'           // Moves slower
+    };
+
+    // Enhanced Fish class
+    class Fish {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0.2;
+        this.vy = 0;
+        this.baseSpeed = 0.2 + Math.random() * 0.2;
+        this.facingLeft = false;
+        this.wiggleOffset = Math.random() * Math.PI * 2;
+        this.wiggleSpeed = 0.05;
+        this.wiggleAmount = 0.2;
+        this.size = 12;
+        this.health = 100;
+        this.lastFed = Date.now();
+        this.isDead = false;
+        this.deathTimer = 0;
+        this.isGhost = false;
+        
+        // Growth tracking
+        this.foodEaten = 0;
+        this.level = 1;
+        this.foodToNextLevel = 5;
+        
+        // Personality
+        this.personality = this.generatePersonality();
+        this.color = this.getBaseColor();
+        this.targetFood = null;
+        this.socialDistance = this.personality.includes(personalityTraits.SHY) ? 40 : 20;
+        
+        // Behavior properties
+        this.currentBehavior = FishBehavior.PATROL;
+        this.behaviorTimer = Math.random() * 300 + 200;
+        this.targetX = null;
+        this.targetY = null;
+        this.excitementLevel = 0;
+        
+        // Patrol points for systematic swimming
+        this.patrolPoints = this.generatePatrolPoints();
+        this.currentPatrolPoint = 0;
+      }
+
+      generatePersonality() {
+        const traits = Object.values(personalityTraits);
+        const numTraits = 1 + Math.floor(Math.random() * 2); // 1-2 traits
+        const personality = [];
+        
+        while (personality.length < numTraits) {
+          const trait = traits[Math.floor(Math.random() * traits.length)];
+          if (!personality.includes(trait)) {
+            personality.push(trait);
+          }
+        }
+        
+        return personality;
+      }
+
+      getBaseColor() {
+        return this.personality.includes(personalityTraits.ENERGETIC) ? '#FFA500' : 
+               this.personality.includes(personalityTraits.LAZY) ? '#FFB347' : '#FF9F1C';
+      }
+
+      updateHealth() {
+        if (this.isDead) return;
+        
+        // Lose all health in 60 seconds
+        const timeSinceLastFed = (Date.now() - this.lastFed) / 1000;
+        this.health = Math.max(0, 100 - (timeSinceLastFed * (100/60))); 
+        
+        if (this.health <= 0 && !this.isDead) {
+          this.isDead = true;
+          this.deathTimer = 180; // 3 seconds at 60fps
+        }
+      }
+
+      grow() {
+        if (this.foodEaten >= this.foodToNextLevel) {
+          this.level++;
+          this.size = 12 + (this.level - 1) * 2; // Increase size with each level
+          this.foodEaten = 0;
+          this.foodToNextLevel = Math.min(5 * this.level, 20); // Increase food needed, max 20
+          return true;
+        }
+        return false;
+      }
+
+      isInWater() {
+        // Check a few points around the fish for water
+        const points = [
+          { x: this.x, y: this.y },
+          { x: this.x + this.size, y: this.y },
+          { x: this.x, y: this.y + this.size },
+          { x: this.x + this.size, y: this.y + this.size }
+        ];
+
+        for (let point of points) {
+          const gridPos = worldToGrid(point.x, point.y);
+          let hasWater = false;
+          
+          // Check surrounding cells for water
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              if (isGridOccupied(gridPos.x + dx, gridPos.y + dy)) {
+                hasWater = true;
+                break;
+              }
+            }
+            if (hasWater) break;
+          }
+          
+          if (!hasWater) return false;
+        }
+        return true;
+      }
+
+      generatePatrolPoints() {
+        const points = [];
+        const margin = 30;
+        // Create a route around the tank
+        points.push(
+          { x: containerLeft + margin, y: containerTop + margin },
+          { x: containerRight - margin, y: containerTop + margin },
+          { x: containerRight - margin, y: containerBottom - margin },
+          { x: containerLeft + margin, y: containerBottom - margin }
+        );
+        return points;
+      }
+
+      chooseBehavior() {
+        const rand = Math.random();
+        
+        // Reduce excitement more gradually
+        this.excitementLevel = Math.max(0, this.excitementLevel - 0.0005);
+        
+        if (this.excitementLevel > 0.8) {
+          return FishBehavior.EXCITED;
+        }
+        
+        // Favor patrol behavior for more natural movement
+        if (rand < 0.6) {
+          return FishBehavior.PATROL;
+        } else if (rand < 0.9) {
+          return FishBehavior.LURK;
+        } else {
+          return FishBehavior.EXCITED;
+        }
+      }
+
+      updateBehavior() {
+        this.behaviorTimer--;
+        if (this.behaviorTimer <= 0) {
+          this.currentBehavior = this.chooseBehavior();
+          this.behaviorTimer = Math.random() * 300 + 200;
+          
+          if (this.currentBehavior === FishBehavior.LURK) {
+            // Find a spot near the bottom
+            this.targetX = containerLeft + Math.random() * (containerRight - containerLeft);
+            this.targetY = containerBottom - this.size - 10 - Math.random() * 20;
+          }
+        }
+
+        // Gradually decrease excitement
+        this.excitementLevel = Math.max(0, this.excitementLevel - 0.001);
+      }
+
+      handlePatrolBehavior() {
+        const target = this.patrolPoints[this.currentPatrolPoint];
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < 30) { // Increased distance for smoother transitions
+          this.currentPatrolPoint = (this.currentPatrolPoint + 1) % this.patrolPoints.length;
+        }
+
+        // Slower, more graceful movement
+        const speed = this.baseSpeed * 0.5;
+        this.vx = (dx / dist) * speed;
+        this.vy = (dy / dist) * speed;
+      }
+
+      handleExcitedBehavior() {
+        if (!this.targetX || Math.random() < 0.02) { // Reduced frequency of direction changes
+          // Stay within a more reasonable area
+          const margin = this.size * 2;
+          this.targetX = this.x + (Math.random() - 0.5) * 100; // Reduced range of movement
+          this.targetY = this.y + (Math.random() - 0.5) * 60;  // Reduced vertical movement
+          
+          // Keep within bounds
+          this.targetX = Math.max(containerLeft + margin, Math.min(containerRight - margin, this.targetX));
+          this.targetY = Math.max(containerTop + margin, Math.min(containerBottom - margin, this.targetY));
+        }
+
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        // Smoother acceleration and more natural movement
+        const speed = this.baseSpeed * (1.3 + this.excitementLevel * 0.7); // Reduced excitement impact
+        this.vx = (dx / dist) * speed;
+        this.vy = (dy / dist) * speed;
+      }
+
+      handleLurkBehavior() {
+        if (!this.targetX || Math.random() < 0.01) { // Less frequent position changes
+          this.targetX = this.x + (Math.random() - 0.5) * 30; // Smaller movement range
+          this.targetY = containerBottom - this.size - 10 - Math.random() * 15;
+          
+          // Keep within bounds
+          this.targetX = Math.max(containerLeft + this.size, Math.min(containerRight - this.size, this.targetX));
+        }
+
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        // Very slow, gentle movement
+        const speed = this.baseSpeed * 0.2;
+        this.vx = (dx / dist) * speed;
+        this.vy = (dy / dist) * speed;
+      }
+
+      findNearestFood(foodParticles) {
+        let nearest = null;
+        let minDist = Infinity;
+        
+        for (let food of foodParticles) {
+          if (food.eaten) continue;
+          const dx = food.x - this.x;
+          const dy = food.y - this.y;
+          const dist = Math.hypot(dx, dy);
+          
+          // Check if food is actually touching the fish
+          const touching = dist < this.size / 2 + food.size / 2;
+          
+          if (touching) {
+            return { food, touching: true };
+          }
+          
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = food;
+          }
+        }
+        
+        return { food: nearest, touching: false };
+      }
+
+      avoidOtherFish(fishes) {
+        let dx = 0;
+        let dy = 0;
+        
+        for (let other of fishes) {
+          if (other === this) continue;
+          
+          const dist = Math.hypot(this.x - other.x, this.y - other.y);
+          if (dist < this.socialDistance) {
+            dx += (this.x - other.x) / dist;
+            dy += (this.y - other.y) / dist;
+          }
+        }
+        
+        return { dx, dy };
+      }
+
+      update(fishes, foodParticles, decorations) {
+        if (this.isGhost) {
+          this.y -= 0.3;
+          this.x += Math.sin(this.wiggleOffset) * 0.2;
+          this.wiggleOffset += 0.03;
+          return;
+        }
+
+        if (this.isDead) {
+          this.deathTimer--;
+          if (this.deathTimer <= 0) {
+            this.isGhost = true;
+          }
+          return;
+        }
+
+        this.updateHealth();
+        this.updateBehavior();
+
+        // Check for food
+        const { food: nearestFood, touching } = this.findNearestFood(foodParticles);
+        
+        if (nearestFood) {
+          this.currentBehavior = FishBehavior.FOOD_SEEKING;
+          this.excitementLevel = Math.min(0.8, this.excitementLevel + 0.05); // Reduced excitement gain
+          
+          if (touching) {
+            nearestFood.eaten = true;
+            this.health = Math.min(100, this.health + 30);
+            this.lastFed = Date.now();
+            this.foodEaten++;
+            this.grow();
+          } else {
+            // Move towards food with more natural acceleration
+            const dx = nearestFood.x - this.x;
+            const dy = nearestFood.y - this.y;
+            const dist = Math.hypot(dx, dy);
+            const speed = this.baseSpeed * (1.2 + this.excitementLevel * 0.8); // Reduced excitement impact
+            
+            // Gradual acceleration towards food
+            this.vx += (dx / dist) * speed * 0.1;
+            this.vy += (dy / dist) * speed * 0.1;
+            
+            // Limit maximum speed
+            const currentSpeed = Math.hypot(this.vx, this.vy);
+            if (currentSpeed > speed) {
+              this.vx = (this.vx / currentSpeed) * speed;
+              this.vy = (this.vy / currentSpeed) * speed;
+            }
+          }
+        } else {
+          // Normal behavior patterns
+          switch (this.currentBehavior) {
+            case FishBehavior.PATROL:
+              this.handlePatrolBehavior();
+              break;
+            case FishBehavior.EXCITED:
+              this.handleExcitedBehavior();
+              break;
+            case FishBehavior.LURK:
+              this.handleLurkBehavior();
+              break;
+          }
+        }
+
+        // Apply social behavior with gentler forces
+        const socialForces = this.avoidOtherFish(fishes);
+        this.vx += socialForces.dx * 0.02; // Reduced social force
+        this.vy += socialForces.dy * 0.02;
+
+        // Apply movement with smoother acceleration
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Apply drag to smooth out movement
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+
+        // Handle collisions
+        this.handleCollision();
+
+        // Stay in water
+        if (!this.isInWater()) {
+          this.y = Math.min(this.y + this.baseSpeed * 0.5, containerBottom - this.size);
+        }
+
+        // Update facing direction with less frequent changes
+        if (Math.abs(this.vx) > 0.1) { // Increased threshold for direction change
+          this.facingLeft = this.vx < 0;
+        }
+
+        // Apply gentler wiggle motion
+        this.wiggleOffset += this.wiggleSpeed * 0.7; // Slower wiggle
+        this.vy += Math.sin(this.wiggleOffset) * this.wiggleAmount * 0.5; // Reduced wiggle amount
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+        if (this.facingLeft) {
+          ctx.scale(-1, 1);
+        }
+        ctx.translate(-this.size / 2, -this.size / 2);
+
+        if (this.isGhost) {
+          // Draw ghost fish
+          ctx.globalAlpha = 0.5;
+          ctx.fillStyle = '#ffffff';
+          const ghostSize = this.size;
+          ctx.fillRect(ghostSize/6, ghostSize/6, ghostSize*2/3, ghostSize*2/3);
+          ctx.fillStyle = '#cccccc';
+          ctx.fillRect(0, ghostSize/3, ghostSize/6, ghostSize/3);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(ghostSize*5/6, ghostSize/3, ghostSize/6, ghostSize/6);
+        } else {
+          // Calculate color based on health
+          const healthColor = this.isDead ? '#808080' : 
+                            this.health < 30 ? '#A9A9A9' :
+                            this.health < 60 ? this.interpolateColor('#A9A9A9', this.color, this.health / 60) :
+                            this.color;
+
+          // Scale all components based on size
+          const bodyWidth = this.size * 2/3;
+          const bodyHeight = this.size * 2/3;
+          const tailWidth = this.size/6;
+          const tailHeight = this.size/3;
+          const finSize = this.size/6;
+
+          // Draw body
+          ctx.fillStyle = healthColor;
+          ctx.fillRect(this.size/6, this.size/6, bodyWidth, bodyHeight);
+          
+          // Draw tail
+          ctx.fillStyle = this.isDead ? '#696969' : '#FF8C00';
+          ctx.fillRect(0, this.size/3, tailWidth, tailHeight);
+          
+          // Draw eye
+          ctx.fillStyle = '#000';
+          ctx.fillRect(this.size*5/6, this.size/3, finSize, finSize);
+          
+          // Draw fins
+          ctx.fillStyle = this.isDead ? '#A9A9A9' : '#FFB347';
+          ctx.fillRect(this.size/3, 0, finSize, finSize);
+          ctx.fillRect(this.size/3, this.size*5/6, finSize, finSize);
+
+          // Draw health indicator
+          if (!this.isDead) {
+            const healthWidth = (this.size - 2) * (this.health / 100);
+            ctx.fillStyle = this.health > 50 ? '#4CAF50' : '#FF5252';
+            ctx.fillRect(1, -2, healthWidth, 1);
+          }
+
+          // Draw level indicator (small dots above health bar)
+          ctx.fillStyle = '#FFD700';
+          for (let i = 0; i < this.level - 1; i++) {
+            ctx.fillRect(2 + i * 3, -4, 2, 2);
+          }
+        }
+
+        ctx.restore();
+      }
+
+      interpolateColor(color1, color2, factor) {
+        const r1 = parseInt(color1.substring(1, 3), 16);
+        const g1 = parseInt(color1.substring(3, 5), 16);
+        const b1 = parseInt(color1.substring(5, 7), 16);
+        
+        const r2 = parseInt(color2.substring(1, 3), 16);
+        const g2 = parseInt(color2.substring(3, 5), 16);
+        const b2 = parseInt(color2.substring(5, 7), 16);
+        
+        const r = Math.round(r1 + (r2 - r1) * factor);
+        const g = Math.round(g1 + (g2 - g1) * factor);
+        const b = Math.round(b1 + (b2 - b1) * factor);
+        
+        return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+      }
+
+      handleCollision() {
+        const margin = this.size;
+        let needsNewDirection = false;
+        
+        if (this.x < containerLeft + margin) {
+          this.x = containerLeft + margin;
+          this.vx = Math.abs(this.vx) * 0.5; // Reduce bounce speed
+          needsNewDirection = true;
+        }
+        if (this.x > containerRight - margin) {
+          this.x = containerRight - margin;
+          this.vx = -Math.abs(this.vx) * 0.5; // Reduce bounce speed
+          needsNewDirection = true;
+        }
+        if (this.y < containerTop + margin) {
+          this.y = containerTop + margin;
+          this.vy = Math.abs(this.vy) * 0.5; // Reduce bounce speed
+          needsNewDirection = true;
+        }
+        if (this.y > containerBottom - margin) {
+          this.y = containerBottom - margin;
+          this.vy = -Math.abs(this.vy) * 0.5; // Reduce bounce speed
+          needsNewDirection = true;
+        }
+        
+        if (needsNewDirection) {
+          // Smoother bounce
+          const angle = Math.atan2(this.vy, this.vx);
+          const newAngle = angle + (Math.random() - 0.5) * Math.PI * 0.3; // Reduced bounce randomness
+          const speed = Math.hypot(this.vx, this.vy) * 0.7; // Reduce speed after bounce
+          this.vx = Math.cos(newAngle) * speed;
+          this.vy = Math.sin(newAngle) * speed;
+          this.facingLeft = this.vx < 0;
+        }
+      }
+    }
+
+    let fishes = [];
+    let foodParticles = [];
+
+    // Add fish button control
+    const addFishBtn = document.getElementById('addFishBtn');
+    addFishBtn.addEventListener('click', () => {
+      console.log('Adding fish...'); // Debug log
+      // Find a suitable spawn position in water
+      let spawnX = containerLeft + Math.random() * (containerRight - containerLeft - 12);
+      let spawnY = containerTop;
+      
+      // Try to find water from top to bottom
+      let waterFound = false;
+      for (let y = containerTop; y < containerBottom; y += gridSize) {
+        const gridPos = worldToGrid(spawnX, y);
+        if (isGridOccupied(gridPos.x, gridPos.y)) {
+          spawnY = y;
+          waterFound = true;
+          break;
+        }
+      }
+      
+      // If no water found, spawn at the bottom
+      if (!waterFound) {
+        spawnY = containerBottom - 20;
+      }
+      
+      console.log('Spawning fish at:', spawnX, spawnY); // Debug log
+      const fish = new Fish(spawnX, spawnY);
+      fishes.push(fish);
+      
+      // Update status bar
+      updateStatusBar();
+    });
+
+    // Add food button control
+    const addFoodBtn = document.getElementById('addFoodBtn');
+    addFoodBtn.addEventListener('click', () => {
+      const x = containerLeft + Math.random() * (containerRight - containerLeft - 3);
+      const y = containerTop;
+      foodParticles.push(new FoodParticle(x, y));
+      updateStatusBar();
+    });
+
+    // Update status bar
+    function updateStatusBar() {
+      const livingFish = fishes.filter(f => !f.isDead && !f.isGhost).length;
+      const activeFood = foodParticles.filter(f => !f.eaten).length;
+      document.getElementById('statusBar').textContent = 
+        `Fish: ${livingFish} | Food: ${activeFood}`;
+    }
+
+    // Decoration system
+    let decorations = [];
+    
+    class Decoration {
+      constructor(type, variant, x, y) {
+        this.type = type;
+        this.variant = variant;
+        this.x = x;
+        this.y = y;
+        this.width = 40;
+        this.height = 40;
+        
+        // Slightly randomize the size for diversity
+        if (type === 'rock') {
+          this.width = 30 + Math.random() * 20;
+          this.height = 25 + Math.random() * 20;
+        } else if (type === 'plant') {
+          this.width = 20 + Math.random() * 15;
+          this.height = 40 + Math.random() * 30;
+        }
+        
+        // Add animation parameters
+        this.animOffset = Math.random() * Math.PI * 2;
+        this.animSpeed = 0.02 + Math.random() * 0.01;
+        this.swayAmount = (type === 'plant') ? 0.2 + Math.random() * 0.3 : 0;
+        this.bobAmount = 0.5 + Math.random() * 0.5;
+        
+        // Add depth effect parameters
+        this.depth = Math.random();
+        this.parallaxFactor = 0.05 + this.depth * 0.1;
+        
+        // Base64 encoded images for each decoration
+        this.image = this.getImage();
+        this.shadowOpacity = 0.4;
+        
+        // Bubble generation for plants
+        this.bubbleTimer = 0;
+        this.maxBubbleTime = type === 'plant' ? 100 + Math.random() * 200 : 0;
+        this.bubbles = [];
+      }
+      
+      getImage() {
+        // Return appropriate base64 image based on type and variant
+        // This is simplified - in a real app, we'd load these from files
+        const variants = {
+          rock: [
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAlklEQVR42mNgGAWjYBSMgqEL/kPBQNvBCIv5D7QDmBgG2gEw8z8MrAOYGQfaAWDzYQ4YaEcwMgy0A8Dmwx0w0I5gYhhoB8DMJzQKBtoRLAwD7QCY+cRGwUA7gpVhoB0AM5+YUTDQjmBjGGgHwMwnZhQMtCPYGQbaATDzSRkFA+0IDoaBdgDMfGLTwUA7gnOgHQAAJdMoHvdBs1QAAAAASUVORK5CYII=",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAsklEQVR42mNgGAWjYBSMAtKBPxax/0CYkYA8MWAmAnJDzf8PdwAO+UE2CkBsdgLyA+uAfzjkB5sD/uGQH/wOGAWjYBQQD/4js/+hsMNAO4KZEav5/+HmD7QDGBnRzP8PN3+gHcDEgGb+f7j5A+0AZgYM8//DzR9oBzAzYJgPN3+gHcDCgGE+3PyBdgALA4b5cPMH2gGsDGjmw80faAewMqCZDzd/oB3AxoBi/n88AQEAUH6HYYRlH7IAAAAASUVORK5CYII=",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAn0lEQVR42mNgGAWjYBSMAtIBIeAKNZ8RizwDFnliAR8W8f9Q84l2AEw/CxZ5Qg5gwiL+nxgHsGARw+sAVizix6lx1FAeZaNgFIwCnOA/DP9HYofTIv0zYJGnRjpgwCJOaRpgxCL+n+pRwIRF/D/VowCW8MlOA4xYxP9TPQpYsIj/p3oUwBI+2WmAEYv4f6pHASsW8f9UjwJCgOZRAABPtrIhMiJFnQAAAABJRU5ErkJggg=="
+          ],
+          plant: [
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAiklEQVR42mNgGAWjYBSMAtLAfyj4j0ecEU18gAATHnEGYhwAAygOYCTCAYxomkhxACOaJlIcwIimCZ8D/qOJM6CJDxBgwiPOgE0TLgcwYtHEiKZpgAATHnEGYlMRIwENTGiaSHEAI5omUhzAiKaJFAcwomki1QFMaOKkOoAJTZxUBzChiZPqAAY0cXIBACkpgCE3T4UgAAAAAElFTkSuQmCC",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAiklEQVR42mNgGAWjYBSMAtLAfyj4j0ecEU18gAATHnEGYhwAAygOYCTCAYxomkhxACOaJlIcwIimCZ8D/qOJM6CJDxBgwiPOgE0TLgcwYtHEiKZpgAATHnEGYlMRIwENTGiaSHEAI5omUhzAiKaJFAcwomki1QFMaOKkOoAJTZxUBzChiZPqAAY0cXIBACkpgCE3T4UgAAAAAElFTkSuQmCC",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAnklEQVR42mNgGAWjYBSMglFAGvgPBf/xiDOiiQ8QYMIjzkCMA0aBA0ZyFDASoYkRi/hA5wEmPOIMxKYiRjRNMAcwommCOYARTRPMAYxommAO+I8mzoAmPkCACY84AzZNuBzAiEUTI5qmAQJMeMQZqJmKGNE0kRIFjGiaSIkCRjRNpEQBI5omUqOACU2cVAcwoYmT6gAmNHFSHcCAJk4uAACBaZZXKO8VJQAAAABJRU5ErkJggg=="
+          ],
+          ornament: [
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAlElEQVR42mNgGAWjYBSMglFACvgPBf+JFRvqgAGLOCMWcQYi5JmwiDNiEWfE44D/eMQZ0TQOdBSwYBFnxCLOiEUTIxoeyChgwCLOiEWcEYsmRjQ8kFHAhEWcEYs4IxZNjGh4IKOABYs4IxZxRiyaGNHwQEYBAxZxRizijFg0MaLhgYwCJizijFjEGbFoYkTDAxkFLFjEGYmQAwBMspQhWoZ5jQAAAABJRU5ErkJggg==",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAm0lEQVR42mNgGAWjYBSMglFACvgPBf+JFRvqgAGLOCMWcQYi5JmwiDNiEWfE44D/eMQZ0TQOdBSwYBFnxCLOiEUTIxoeyChgwCLOiEWcEYsmRjQ8kFHAhEWcEYs4IxZNjGh4IKOABYs4IxZxRiyaGNHwQEYBAxZxRizijFg0MaLhgYwCJizijFjEGbFoYkTDAxkFLFjEGYmQAwBMspQhWoZ5jQAAAABJRU5ErkJggg=="
+          ],
+          misc: [
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAj0lEQVR42mNgGAWjYBSMglGAC/yHgv94xBnRxAcIMOERZyDGAaNgFFAdMJLgACYs4gzkOIAJizgjMQ5gQhNnQBMfIMCER5wBmyZcDmDEookRTdMAAUY84gzkpCJGNE2keAEjmiZSvMCIpokULzCiaSLFC4xomkj1AhOaOKleYEITJ9ULTGjipHqBAU0cFwAAVyR8IeEoiK8AAAAASUVORK5CYII=",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkklEQVR42mNgGAWjYBSMglGAC/yHgv94xBnRxAcIMOERZyDGAaNgFFAdMJLgACYs4gzkOIAJizgjMQ5gQhNnQBMfIMCER5wBmyZcDmDEookRTdMAAUY84gzkpCJGNE2keIERTRMpXmBE00SKFxjRNJHiBUY0TaR6gQlNnFQvMKGJk+oFJjRxUr3AgCaOCwAAs9F8Ic+0DvEAAAAASUVORK5CYII="
+          ]
+        };
+        
+        const variantIndex = this.variant - 1;
+        return variants[this.type][Math.min(variantIndex, variants[this.type].length - 1)];
+      }
+
+      update() {
+        // Update animation offsets
+        this.animOffset += this.animSpeed;
+        
+        // Update bubbles for plants
+        if (this.type === 'plant' && this.maxBubbleTime > 0) {
+          this.bubbleTimer--;
+          
+          if (this.bubbleTimer <= 0) {
+            // Create a new bubble
+            const bubbleX = this.x + this.width * (0.3 + Math.random() * 0.4);
+            const bubbleY = this.y + this.height * 0.3;
+            const bubbleSize = 1 + Math.random() * 2;
+            const bubbleSpeed = 0.2 + Math.random() * 0.3;
+            
+            this.bubbles.push({
+              x: bubbleX,
+              y: bubbleY,
+              size: bubbleSize,
+              speed: bubbleSpeed,
+              opacity: 0.6 + Math.random() * 0.3
+            });
+            
+            // Reset timer
+            this.bubbleTimer = this.maxBubbleTime;
+          }
+        }
+        
+        // Update existing bubbles
+        for (let i = this.bubbles.length - 1; i >= 0; i--) {
+          const bubble = this.bubbles[i];
+          bubble.y -= bubble.speed;
+          bubble.x += Math.sin(this.animOffset * 2) * 0.1;
+          
+          // Remove bubbles that reach the top
+          if (bubble.y < containerTop) {
+            this.bubbles.splice(i, 1);
+          }
+        }
+      }
+      
+      draw(ctx) {
+        ctx.save();
+
+        // Apply animation offsets based on type
+        let drawX = this.x;
+        let drawY = this.y;
+        
+        if (this.type === 'plant') {
+          // Plants sway in the water
+          drawX += Math.sin(this.animOffset) * this.swayAmount * 5;
+        } else if (this.type === 'misc') {
+          // Misc items bob up and down slightly
+          drawY += Math.sin(this.animOffset) * this.bobAmount;
+        }
+        
+        // Draw shadow first
+        ctx.globalAlpha = this.shadowOpacity;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        
+        if (this.type === 'rock') {
+          // Rocks have irregular shadow
+          const shadowX = drawX + 2;
+          const shadowY = drawY + 5;
+          const shadowWidth = this.width;
+          const shadowHeight = this.height * 0.3;
+          
+          ctx.beginPath();
+          ctx.ellipse(shadowX + shadowWidth/2, shadowY + shadowHeight, 
+                    shadowWidth/2, shadowHeight/2, 0, 0, Math.PI*2);
+          ctx.fill();
+        } else {
+          // Other objects have simple oval shadow
+          const shadowX = drawX + 2;
+          const shadowY = drawY + this.height - 5;
+          
+          ctx.beginPath();
+          ctx.ellipse(shadowX + this.width/2, shadowY, 
+                    this.width/2, this.height * 0.1, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+        
+        // Draw main image with improved rendering
+        ctx.globalAlpha = 1.0;
+        const img = new Image();
+        img.src = this.image;
+        
+        // Apply special rendering based on type
+        if (this.type === 'rock') {
+          // Draw the rock with a depth effect
+          ctx.drawImage(img, drawX, drawY, this.width, this.height);
+          
+          // Add highlight to rocks for 3D effect
+          const gradient = ctx.createLinearGradient(
+            drawX, drawY, 
+            drawX + this.width, drawY + this.height
+          );
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
+          
+          ctx.fillStyle = gradient;
+          ctx.globalAlpha = 0.2;
+          ctx.beginPath();
+          ctx.ellipse(drawX + this.width/2, drawY + this.height/2, 
+                   this.width/2, this.height/2, 0, 0, Math.PI*2);
+          ctx.fill();
+        } 
+        else if (this.type === 'plant') {
+          // Draw plants with movement effect
+          ctx.drawImage(img, drawX, drawY, this.width, this.height);
+          
+          // Add color variation and highlight
+          const gradient = ctx.createLinearGradient(
+            drawX, drawY, 
+            drawX + this.width, drawY + this.height
+          );
+          gradient.addColorStop(0, 'rgba(100, 255, 100, 0.15)');
+          gradient.addColorStop(1, 'rgba(0, 180, 0, 0.10)');
+          
+          ctx.fillStyle = gradient;
+          ctx.globalAlpha = 0.3 + Math.sin(this.animOffset) * 0.1;
+          ctx.fillRect(drawX, drawY, this.width, this.height);
+        }
+        else {
+          // Draw other decorations with basic enhancements
+          ctx.drawImage(img, drawX, drawY, this.width, this.height);
+          
+          // Add highlight effect
+          const gradient = ctx.createLinearGradient(
+            drawX, drawY, 
+            drawX + this.width, drawY + this.height
+          );
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+          gradient.addColorStop(1, 'rgba(100, 100, 100, 0.1)');
+          
+          ctx.fillStyle = gradient;
+          ctx.globalAlpha = 0.15;
+          ctx.fillRect(drawX, drawY, this.width, this.height);
+        }
+        
+        // Draw bubbles for plants
+        if (this.type === 'plant') {
+          for (const bubble of this.bubbles) {
+            ctx.globalAlpha = bubble.opacity;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add highlight to bubble
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, 
+                    bubble.size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        
+        ctx.restore();
+      }
+      
+      // Check if decoration is at given position
+      isAt(x, y) {
+        return x >= this.x && x <= this.x + this.width &&
+               y >= this.y && y <= this.y + this.height;
+      }
+      
+      // Check if a fish is near this decoration
+      isNearFish(fish, distance = 30) {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const fishCenterX = fish.x + fish.size / 2;
+        const fishCenterY = fish.y + fish.size / 2;
+        
+        const dist = Math.hypot(centerX - fishCenterX, centerY - fishCenterY);
+        return dist < distance;
+      }
+    }
+    
+    // Set up decoration drag and drop
+    let draggedItem = null;
+    
+    // Initialize decoration menu tabs
+    document.querySelectorAll('.menu-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and content
+        document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
+      });
+    });
+    
+    // Initialize decoration items
+    document.querySelectorAll('.decoration-item').forEach(item => {
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        
+        // Create a new decoration
+        const type = this.dataset.type;
+        const variant = parseInt(this.dataset.variant);
+        
+        // Create a ghost decoration for dragging
+        draggedItem = {
+          type: type,
+          variant: variant,
+          element: document.createElement('div'),
+          startX: e.clientX,
+          startY: e.clientY
+        };
+        
+        // Style the dragged element
+        draggedItem.element.className = 'tank-decoration';
+        draggedItem.element.innerHTML = `<img src="${this.querySelector('img').src}" style="width: 40px; height: 40px;">`;
+        draggedItem.element.style.position = 'absolute';
+        draggedItem.element.style.left = `${e.clientX - 20}px`;
+        draggedItem.element.style.top = `${e.clientY - 20}px`;
+        draggedItem.element.style.pointerEvents = 'none';
+        draggedItem.element.style.zIndex = '1000';
+        
+        document.body.appendChild(draggedItem.element);
+      });
+    });
+    
+    // Handle mouse move for dragging
+    document.addEventListener('mousemove', function(e) {
+      if (draggedItem) {
+        draggedItem.element.style.left = `${e.clientX - 20}px`;
+        draggedItem.element.style.top = `${e.clientY - 20}px`;
+      }
+    });
+    
+    // Handle mouse up for dropping
+    document.addEventListener('mouseup', function(e) {
+      if (draggedItem) {
+        // Check if dropped on canvas
+        const canvasRect = canvas.getBoundingClientRect();
+        
+        if (e.clientX >= canvasRect.left && e.clientX <= canvasRect.right &&
+            e.clientY >= canvasRect.top && e.clientY <= canvasRect.bottom) {
+          
+          // Convert to canvas coordinates
+          const canvasX = e.clientX - canvasRect.left;
+          const canvasY = e.clientY - canvasRect.top;
+          
+          // Ensure decoration is within container bounds
+          if (canvasX >= containerLeft && canvasX <= containerRight &&
+              canvasY >= containerTop && canvasY <= containerBottom) {
+            
+            // Add decoration to the tank
+            const decoration = new Decoration(
+              draggedItem.type,
+              draggedItem.variant,
+              canvasX - 20,
+              canvasY - 20
+            );
+            
+            decorations.push(decoration);
+          }
+        }
+        
+        // Remove the dragged element
+        document.body.removeChild(draggedItem.element);
+        draggedItem = null;
+      }
+    });
+
+    // Modify the main animation loop to update and draw decorations
+    function loop() {
+      injectWater();
+      updateParticles();
+      
+      // Update and clean up food particles
+      foodParticles = foodParticles.filter(f => f.lifespan > 0);
+      foodParticles.forEach(f => f.update());
+      
+      // Update decorations
+      decorations.forEach(decoration => decoration.update());
+      
+      // Update and clean up fish
+      fishes = fishes.filter(f => !f.isGhost || f.y > -20);
+      for (let fish of fishes) {
+        fish.update(fishes, foodParticles, decorations);
+      }
+      
+      ctx.clearRect(0, 0, simWidth, simHeight);
+      drawContainer();
+      drawParticles();
+      
+      // Draw decorations
+      decorations.forEach(decoration => decoration.draw(ctx));
+      
+      // Draw food
+      foodParticles.forEach(f => f.draw());
+      
+      // Draw fish
+      fishes.forEach(f => f.draw());
+      
+      updateStatusBar();
+      requestAnimationFrame(loop);
+    }
+  
+    function getNeighborhoodInfo(fish, fishes, decorations) {
+      const nearbyFish = [];
+      let closestDecoration = null;
+      let minDecorationDist = Infinity;
+      
+      // Check nearby fish
+      for (const other of fishes) {
+        if (other === fish) continue;
+        
+        const dx = other.x - fish.x;
+        const dy = other.y - fish.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if (dist < 50) {
+          nearbyFish.push({
+            fish: other,
+            dist: dist,
+            dx: dx / dist,
+            dy: dy / dist
+          });
+        }
+      }
+      
+      // Check nearby decorations
+      for (const decoration of decorations) {
+        const decorationCenterX = decoration.x + decoration.width / 2;
+        const decorationCenterY = decoration.y + decoration.height / 2;
+        const dx = decorationCenterX - fish.x;
+        const dy = decorationCenterY - fish.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if (dist < 60 && dist < minDecorationDist) {
+          minDecorationDist = dist;
+          closestDecoration = {
+            decoration: decoration,
+            dist: dist,
+            dx: dx / dist,
+            dy: dy / dist
+          };
+        }
+      }
+      
+      return {
+        nearbyFish,
+        closestDecoration
+      };
+    }
+
+    loop();
+  </script>
+</body>      
+</html>
